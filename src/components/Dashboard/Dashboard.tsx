@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilterBar } from "./FilterBar";
 import { MetricsOverview } from "./MetricsOverview";
 import { DataTable } from "./DataTable";
+import { TopicsWordCloud } from "./TopicsWordCloud";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { BarChart, LineChart } from 'lucide-react';
 
@@ -47,10 +48,17 @@ export const Dashboard = () => {
           </div>
           
           <TabsContent value="overview" className="animate-fade-in">
-            <MetricsOverview 
-              dashboardData={dashboardData} 
-              filteredDataCount={filteredData.length}
-            />
+            {dashboardData && (
+              <>
+                <MetricsOverview 
+                  dashboardData={dashboardData} 
+                  filteredDataCount={filteredData.length}
+                />
+                <div className="mt-6">
+                  <TopicsWordCloud />
+                </div>
+              </>
+            )}
           </TabsContent>
           
           <TabsContent value="data" className="animate-fade-in">

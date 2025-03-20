@@ -1,4 +1,3 @@
-
 // This file contains utility functions for processing the data from our SQLite database
 
 import * as db from '@/services/database';
@@ -74,6 +73,21 @@ export const getAverageIntensityBySector = () => {
   });
   
   return result.sort((a, b) => b.value - a.value);
+};
+
+// Function to get topic frequencies
+export const getTopicFrequencies = () => {
+  const topicCounts = new Map<string, number>();
+  
+  jsonData.forEach(item => {
+    if (item.topic) {
+      topicCounts.set(item.topic, (topicCounts.get(item.topic) || 0) + 1);
+    }
+  });
+  
+  return Array.from(topicCounts.entries())
+    .map(([text, value]) => ({ text, value }))
+    .sort((a, b) => b.value - a.value);
 };
 
 // Mock database-returned data for synchronous UI rendering

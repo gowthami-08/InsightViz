@@ -22,6 +22,21 @@ interface Filters {
   country: string | null;
 }
 
+export interface DashboardData {
+  totalItems: number;
+  averageIntensity: number;
+  averageLikelihood: number;
+  averageRelevance: number;
+  intensityBySector: { sector: string; value: number }[];
+  likelihoodByRegion: { region: string; value: number }[];
+  relevanceByTopic: { topic: string; value: number }[];
+  dataByYear: { year: number; count: number }[];
+  topInsights: { title: string; intensity: number; sector: string; topic: string }[];
+  sectorDistribution: { name: string; value: number }[];
+  pestleDistribution: { name: string; value: number }[];
+  regionDistribution: { name: string; value: number }[];
+}
+
 export const useDashboardData = () => {
   const [filters, setFilters] = useState<Filters>({
     sector: null,
@@ -50,7 +65,7 @@ export const useDashboardData = () => {
   }, [filters]);
   
   // Calculate various metrics based on filtered data
-  const dashboardData = useMemo(() => {
+  const dashboardData = useMemo((): DashboardData | null => {
     // Only calculate these if we have filtered data
     if (!filteredData.length) return null;
     

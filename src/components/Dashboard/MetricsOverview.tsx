@@ -1,4 +1,3 @@
-
 import { 
   Card, 
   CardHeader, 
@@ -10,7 +9,8 @@ import {
   BarChart, 
   AreaChart, 
   PieChart, 
-  LineChart, 
+  LineChart as RechartsLineChart, 
+  Line,
   Area, 
   Bar, 
   XAxis, 
@@ -293,7 +293,7 @@ export const MetricsOverview = ({ dashboardData, filteredDataCount }: MetricsOve
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
+              <RechartsLineChart
                 data={dashboardData.relevanceByTopic.slice(0, 10)}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
@@ -325,7 +325,7 @@ export const MetricsOverview = ({ dashboardData, filteredDataCount }: MetricsOve
                   activeDot={{ r: 6, stroke: '#2563eb', strokeWidth: 2, fill: '#3b82f6' }}
                   className="animate-slide-up [animation-delay:800ms]"
                 />
-              </LineChart>
+              </RechartsLineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

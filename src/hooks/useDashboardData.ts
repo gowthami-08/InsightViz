@@ -9,8 +9,7 @@ import {
   getAverageRelevanceByTopic,
   getDataByYear,
   getTopInsightsByIntensity,
-  countByField,
-  getMostFrequentTopics
+  countByField
 } from '@/utils/dataUtils';
 
 interface Filters {
@@ -36,7 +35,6 @@ export interface DashboardData {
   sectorDistribution: { name: string; value: number }[];
   pestleDistribution: { name: string; value: number }[];
   regionDistribution: { name: string; value: number }[];
-  frequentTopics: { topic: string; count: number }[];
 }
 
 export const useDashboardData = () => {
@@ -83,8 +81,7 @@ export const useDashboardData = () => {
       topInsights: getTopInsightsByIntensity(5),
       sectorDistribution: countByField('sector'),
       pestleDistribution: countByField('pestle'),
-      regionDistribution: countByField('region'),
-      frequentTopics: getMostFrequentTopics(50)
+      regionDistribution: countByField('region')
     };
   }, [filteredData]);
   

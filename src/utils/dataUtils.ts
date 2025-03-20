@@ -76,6 +76,25 @@ export const getAverageIntensityBySector = () => {
   return result.sort((a, b) => b.value - a.value);
 };
 
+// Function to get most frequent topics - synchronous for UI
+export const getMostFrequentTopics = (limit: number = 50): { topic: string; count: number }[] => {
+  const topicCounts = new Map<string, number>();
+  
+  // Count occurrences of each topic
+  jsonData.forEach(item => {
+    if (item.topic) {
+      const count = topicCounts.get(item.topic) || 0;
+      topicCounts.set(item.topic, count + 1);
+    }
+  });
+  
+  // Convert to array and sort by count
+  return Array.from(topicCounts.entries())
+    .map(([topic, count]) => ({ topic, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+};
+
 // Mock database-returned data for synchronous UI rendering
 const mockLikelihoodByRegion: { region: string; value: number }[] = [
   { region: 'Northern America', value: 3.5 },

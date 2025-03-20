@@ -159,6 +159,18 @@ export const getUniqueValues = async (field: string): Promise<string[]> => {
   return result.map(row => row.value);
 };
 
+// Get most frequent topics
+export const getMostFrequentTopics = async (limit: number = 50): Promise<{ topic: string; count: number }[]> => {
+  return executeQuery<{ topic: string; count: number }>(`
+    SELECT topic, COUNT(*) as count 
+    FROM insights 
+    WHERE topic IS NOT NULL 
+    GROUP BY topic 
+    ORDER BY count DESC 
+    LIMIT ${limit}
+  `);
+};
+
 // Get average intensity by sector
 export const getAverageIntensityBySector = async (): Promise<{ sector: string; value: number }[]> => {
   return executeQuery<{ sector: string; value: number }>(`

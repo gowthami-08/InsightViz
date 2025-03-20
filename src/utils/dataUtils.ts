@@ -1,7 +1,7 @@
 
-// This file contains utility functions for processing the JSON data
+// This file contains utility functions for processing the data from our SQLite database
 
-import data from '@/data/jsondata.json';
+import * as db from '@/services/database';
 
 // Type definitions for our data
 export interface DataItem {
@@ -24,11 +24,15 @@ export interface DataItem {
   likelihood: number;
 }
 
+// For backward compatibility - returns data directly from JSON
+import jsonData from '@/data/jsondata.json';
+
 // Function to get all unique values for a specific field
 export const getUniqueValues = (field: keyof DataItem): string[] => {
+  // Fallback to direct JSON processing for synchronous operations
   const values = new Set<string>();
   
-  data.forEach(item => {
+  jsonData.forEach(item => {
     if (item[field]) {
       values.add(item[field] as string);
     }
@@ -39,7 +43,8 @@ export const getUniqueValues = (field: keyof DataItem): string[] => {
 
 // Function to get filtered data based on multiple criteria
 export const getFilteredData = (filters: Partial<Record<keyof DataItem, string | number | null>>) => {
-  return data.filter(item => {
+  // Fallback to direct JSON processing for synchronous operations
+  return jsonData.filter(item => {
     for (const [key, value] of Object.entries(filters)) {
       if (value !== null && value !== undefined && value !== '') {
         if (item[key as keyof DataItem] !== value) {
@@ -53,11 +58,12 @@ export const getFilteredData = (filters: Partial<Record<keyof DataItem, string |
 
 // Function to calculate average intensity by sector
 export const getAverageIntensityBySector = () => {
+  // Fallback to direct JSON processing for synchronous operations
   const sectors = getUniqueValues('sector');
   const result: { sector: string; value: number }[] = [];
   
   sectors.forEach(sector => {
-    const sectorData = data.filter(item => item.sector === sector);
+    const sectorData = jsonData.filter(item => item.sector === sector);
     const totalIntensity = sectorData.reduce((sum, item) => sum + item.intensity, 0);
     const averageIntensity = totalIntensity / sectorData.length;
     
@@ -72,92 +78,25 @@ export const getAverageIntensityBySector = () => {
 
 // Function to calculate average likelihood by region
 export const getAverageLikelihoodByRegion = () => {
-  const regions = getUniqueValues('region');
-  const result: { region: string; value: number }[] = [];
-  
-  regions.forEach(region => {
-    const regionData = data.filter(item => item.region === region);
-    const totalLikelihood = regionData.reduce((sum, item) => sum + item.likelihood, 0);
-    const averageLikelihood = totalLikelihood / regionData.length;
-    
-    result.push({
-      region,
-      value: parseFloat(averageLikelihood.toFixed(2))
-    });
-  });
-  
-  return result.sort((a, b) => b.value - a.value);
+  return db.getAverageLikelihoodByRegion();
 };
 
 // Function to calculate average relevance by topic
 export const getAverageRelevanceByTopic = () => {
-  const topics = getUniqueValues('topic');
-  const result: { topic: string; value: number }[] = [];
-  
-  topics.forEach(topic => {
-    const topicData = data.filter(item => item.topic === topic);
-    const totalRelevance = topicData.reduce((sum, item) => sum + item.relevance, 0);
-    const averageRelevance = totalRelevance / topicData.length;
-    
-    result.push({
-      topic,
-      value: parseFloat(averageRelevance.toFixed(2))
-    });
-  });
-  
-  return result.sort((a, b) => b.value - a.value);
+  return db.getAverageRelevanceByTopic();
 };
 
 // Function to get data distribution by year
 export const getDataByYear = () => {
-  const years = new Set<number>();
-  
-  data.forEach(item => {
-    if (item.start_year) years.add(item.start_year);
-    if (item.end_year) years.add(item.end_year);
-  });
-  
-  const yearArray = Array.from(years).sort();
-  const result = yearArray.map(year => {
-    const yearData = data.filter(item => 
-      (item.start_year && item.start_year <= year) && 
-      (item.end_year && item.end_year >= year)
-    );
-    
-    return {
-      year,
-      count: yearData.length
-    };
-  });
-  
-  return result;
+  return db.getDataByYear();
 };
 
 // Function to get top insights by intensity
 export const getTopInsightsByIntensity = (limit: number = 10) => {
-  return [...data]
-    .sort((a, b) => b.intensity - a.intensity)
-    .slice(0, limit)
-    .map(item => ({
-      title: item.title,
-      intensity: item.intensity,
-      sector: item.sector,
-      topic: item.topic
-    }));
+  return db.getTopInsightsByIntensity(limit);
 };
 
 // Function to count data points by a specific field
 export const countByField = (field: keyof DataItem) => {
-  const counts: Record<string, number> = {};
-  
-  data.forEach(item => {
-    const value = item[field] as string;
-    if (value) {
-      counts[value] = (counts[value] || 0) + 1;
-    }
-  });
-  
-  return Object.entries(counts)
-    .map(([key, value]) => ({ name: key, value }))
-    .sort((a, b) => b.value - a.value);
+  return db.countByField(field);
 };

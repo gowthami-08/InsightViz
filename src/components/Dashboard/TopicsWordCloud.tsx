@@ -65,7 +65,7 @@ export const TopicsWordCloud = () => {
           {sortedTopics.map((topic, index) => (
             <div 
               key={topic.text} 
-              className={`${colors[index % colors.length]} hover:opacity-80 transition-opacity cursor-default`}
+              className={`${colors[index % colors.length]} hover:opacity-80 transition-opacity cursor-default animate-fade-in`}
               style={{ 
                 fontSize: `${getSizeForValue(topic.value)}rem`,
                 padding: '0.25rem 0.5rem',
@@ -74,7 +74,6 @@ export const TopicsWordCloud = () => {
                 fontWeight: topic.value > (minValue + maxValue) / 2 ? 'bold' : 'normal',
                 animationDelay: `${index * 100}ms`,
               }}
-              className="animate-fade-in"
             >
               {topic.text}
             </div>

@@ -1,70 +1,67 @@
+# InsightViz
 
-# Welcome to InsightViz
+## Overview
+InsightViz is a powerful data visualization tool that enables users to analyze and interpret complex datasets effortlessly. Designed with an intuitive user interface, it provides insightful visual representations to help users make informed decisions.
 
-## Project info
+## Features
+- **Interactive Dashboards**: Easily navigate through various data visualizations.
+- **Customizable Charts**: Modify chart types, colors, and data points to suit your needs.
+- **Real-time Data Processing**: Fetch and display data dynamically.
+- **Responsive Design**: Works seamlessly across different devices.
+- **Export Options**: Save visualizations in multiple formats for reports and presentations.
 
-**URL**: https://lovable.dev/projects/4454ff55-1179-4d26-b926-0e607e2a4027
+## Tech Stack
+- **Frontend**: React.js, Tailwind CSS
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB
+- **Data Processing**: Python (Pandas, NumPy)
+- **Deployment**: Docker, Vercel
 
-## How can I edit this code?
+## Deployment
+You can access the live application here: [InsightViz Deployment](https://poetic-mooncake-a5c15f.netlify.app/)
 
-There are several ways of editing your application.
+## Installation & Setup
+### Prerequisites
+Ensure you have the following installed:
+- Node.js and npm
+- MongoDB (if running locally)
+- Git
 
-**Use Lovable**
+### Steps to Run Locally
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/gowthami-08/InsightViz.git
+   cd InsightViz
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm start
+   ```
+4. Open your browser and navigate to `http://localhost:3000`
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4454ff55-1179-4d26-b926-0e607e2a4027) and start prompting.
+## Usage
+1. Upload or connect your dataset.
+2. Choose visualization options.
+3. Customize charts as needed.
+4. Analyze insights and export results.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Contributing
+We welcome contributions! Please follow these steps:
+1. Fork the repository.
+2. Create a feature branch.
+3. Commit your changes.
+4. Push to your fork and submit a pull request.
 
-**Use your preferred IDE**
+## License
+This project is licensed under the MIT License.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Contact
+For any queries or support, feel free to reach out:
+- **Author**: Gowthami
+- **Email**: gowthami@example.com
+- **GitHub**: [@gowthami-08](https://github.com/gowthami-08)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/4454ff55-1179-4d26-b926-0e607e2a4027) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)

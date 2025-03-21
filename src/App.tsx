@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useEffect, useState } from "react";
 import { initDatabase } from "./services/database";
+import { ThemeProvider } from "./providers/ThemeProvider";
+import { Layout } from "./components/Layout";
 
 const queryClient = new QueryClient();
 
@@ -33,22 +35,26 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          {dbError && (
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-              <p>{dbError}</p>
-            </div>
-          )}
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Layout>
+              {dbError && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-600" role="alert">
+                  <p>{dbError}</p>
+                </div>
+              )}
+              <Routes>
+                <Route path="/" element={<Index />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

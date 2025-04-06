@@ -5,16 +5,19 @@ import { FilterBar } from "./FilterBar";
 import { MetricsOverview } from "./MetricsOverview";
 import { DataTable } from "./DataTable";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { BarChart, LineChart, Download, Mail, BellRing } from 'lucide-react';
+import { BarChart, LineChart, Download, Mail, BellRing, Upload } from 'lucide-react';
 import { ExportData } from './ExportData';
 import { EmailReports } from './EmailReports';
 import { CustomAlerts } from './CustomAlerts';
 import { PredictiveAnalytics } from './PredictiveAnalytics';
 import { ComparisonMode } from './ComparisonMode';
 import { NaturalLanguageInsights } from './NaturalLanguageInsights';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const navigate = useNavigate();
   const { 
     filters, 
     filterOptions, 
@@ -35,6 +38,14 @@ export const Dashboard = () => {
       
       <div className="container max-w-7xl mx-auto flex-grow px-4 py-8">
         <div className="flex flex-wrap gap-4 mb-6 justify-end">
+          <Button 
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => navigate('/upload')}
+          >
+            <Upload className="h-4 w-4" />
+            Upload Files
+          </Button>
           <ExportData data={filteredData} />
           <EmailReports />
           <CustomAlerts />

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { initDatabase } from "./services/database";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { Layout } from "./components/Layout";
+import { FileUploadPage } from "./components/Dashboard/FileUploadPage";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => {
               )}
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/upload" element={<FileUploadPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

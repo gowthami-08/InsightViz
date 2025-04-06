@@ -121,6 +121,7 @@ export const PredictiveAnalytics = ({ data }: PredictiveAnalyticsProps) => {
               <YAxis label={{ value: metricToLabel[metric], angle: -90, position: 'insideLeft' }} />
               <Tooltip />
               <Legend />
+              {/* Fix: Replace the function with two separate Line components */}
               <Line
                 type="monotone"
                 dataKey={metric}
@@ -128,7 +129,22 @@ export const PredictiveAnalytics = ({ data }: PredictiveAnalyticsProps) => {
                 strokeWidth={2}
                 dot={{ stroke: '#8884d8', strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6 }}
-                strokeDasharray={(d) => d.type === "Forecast" ? "5 5" : "0"}
+                name="Historical"
+                connectNulls
+                strokeDasharray="0"
+                data={forecastData.filter(d => d.type === "Historical")}
+              />
+              <Line
+                type="monotone"
+                dataKey={metric}
+                stroke="#8884d8"
+                strokeWidth={2}
+                dot={{ stroke: '#8884d8', strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6 }}
+                name="Forecast"
+                connectNulls
+                strokeDasharray="5 5"
+                data={forecastData.filter(d => d.type === "Forecast")}
               />
             </LineChart>
           </ResponsiveContainer>

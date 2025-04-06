@@ -9,12 +9,12 @@ import { Upload, Table, BarChart } from 'lucide-react';
 
 export const FileUploadPage = () => {
   const [extractedData, setExtractedData] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState("upload");
   
   const handleDataExtracted = (data: any[]) => {
     setExtractedData(data);
     // Move to data preview tab when data is extracted
-    setActiveTab(1);
+    setActiveTab("preview");
   };
   
   return (
@@ -34,13 +34,13 @@ export const FileUploadPage = () => {
         onValueChange={setActiveTab}
       >
         <TabList className="grid grid-cols-2 max-w-[400px]">
-          <Tab className="flex items-center gap-2" value={0}>
+          <Tab className="flex items-center gap-2" value="upload">
             <Upload className="h-4 w-4" />
             <span>Upload Files</span>
           </Tab>
           <Tab 
             className="flex items-center gap-2" 
-            value={1}
+            value="preview"
             disabled={extractedData.length === 0}
           >
             <Table className="h-4 w-4" />
@@ -49,7 +49,7 @@ export const FileUploadPage = () => {
         </TabList>
         
         <TabPanels>
-          <TabPanel value={0}>
+          <TabPanel value="upload">
             <Card>
               <CardHeader>
                 <CardTitle>Upload Files</CardTitle>
@@ -64,7 +64,7 @@ export const FileUploadPage = () => {
             </Card>
           </TabPanel>
           
-          <TabPanel value={1}>
+          <TabPanel value="preview">
             {extractedData.length > 0 ? (
               <Card>
                 <CardContent className="pt-6">
@@ -83,7 +83,7 @@ export const FileUploadPage = () => {
                   </p>
                   <Button 
                     variant="outline" 
-                    onClick={() => setActiveTab(0)}
+                    onClick={() => setActiveTab("upload")}
                     className="mt-2"
                   >
                     Go to Upload

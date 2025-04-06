@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@/components/ui/tabs";
 import { FilterBar } from "./FilterBar";
 import { MetricsOverview } from "./MetricsOverview";
 import { DataTable } from "./DataTable";
@@ -51,51 +51,53 @@ export const Dashboard = () => {
           <CustomAlerts />
         </div>
 
-        <Tabs 
+        <TabGroup 
           value={activeTab} 
           onValueChange={setActiveTab}
           className="space-y-8"
         >
           <div className="flex justify-center">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
+            <TabList className="grid w-full max-w-md grid-cols-2">
+              <Tab value="overview" className="flex items-center gap-2">
                 <BarChart className="h-4 w-4" />
                 <span>Dashboard</span>
-              </TabsTrigger>
-              <TabsTrigger value="data" className="flex items-center gap-2">
+              </Tab>
+              <Tab value="data" className="flex items-center gap-2">
                 <LineChart className="h-4 w-4" />
                 <span>Data Table</span>
-              </TabsTrigger>
-            </TabsList>
+              </Tab>
+            </TabList>
           </div>
           
-          <TabsContent value="overview" className="animate-fade-in">
-            {dashboardData && (
-              <>
-                <MetricsOverview 
-                  dashboardData={dashboardData} 
-                  filteredDataCount={filteredData.length}
-                />
-                
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mt-6">
-                  <NaturalLanguageInsights data={filteredData} />
-                </div>
+          <TabPanels>
+            <TabPanel value="overview" className="animate-fade-in">
+              {dashboardData && (
+                <>
+                  <MetricsOverview 
+                    dashboardData={dashboardData} 
+                    filteredDataCount={filteredData.length}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mt-6">
+                    <NaturalLanguageInsights data={filteredData} />
+                  </div>
 
-                <div className="mt-8">
-                  <PredictiveAnalytics data={filteredData} />
-                </div>
+                  <div className="mt-8">
+                    <PredictiveAnalytics data={filteredData} />
+                  </div>
 
-                <div className="mt-8">
-                  <ComparisonMode data={filteredData} />
-                </div>
-              </>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="data" className="animate-fade-in">
-            <DataTable data={filteredData} />
-          </TabsContent>
-        </Tabs>
+                  <div className="mt-8">
+                    <ComparisonMode data={filteredData} />
+                  </div>
+                </>
+              )}
+            </TabPanel>
+            
+            <TabPanel value="data" className="animate-fade-in">
+              <DataTable data={filteredData} />
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
       </div>
     </div>
   );

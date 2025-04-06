@@ -1,10 +1,17 @@
 
 import { useState, useRef } from 'react';
-import { Upload, File, FileText, X, AlertCircle, Check } from 'lucide-react';
+import { Upload, File, FileText, X, AlertCircle, Check, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { parseCSV, parsePDF } from '@/utils/fileParsingUtils';
+import { 
+  parseCSV, 
+  parsePDF, 
+  validateFile, 
+  MAX_FILE_SIZE,
+  logFileError 
+} from '@/utils/fileParsingUtils';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface FileUploadProps {
   onDataExtracted: (data: any[]) => void;
@@ -50,17 +57,24 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     
     // Validate files
     for (const file of files) {
-      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const validation = validateFile(file);
       
-      if (fileExt === 'csv' || fileExt === 'pdf') {
+      if (validation.valid) {
         validFiles.push(file);
       } else {
-        errors.push(`${file.name}: Unsupported file type. Only CSV and PDF files are allowed.`);
+        errors.push(`${file.name}: ${validation.error}`);
       }
     }
     
     if (errors.length > 0) {
       setUploadErrors(prev => [...prev, ...errors]);
+      
+      // Show toast for validation errors
+      if (errors.length === 1) {
+        toast.error(errors[0]);
+      } else {
+        toast.error(`${errors.length} files had validation errors. Please check the error section below.`);
+      }
     }
     
     if (validFiles.length > 0) {
@@ -92,9 +106,18 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
         try {
           // Parse file based on type
           if (fileExt === 'csv') {
-            const data = await parseCSV(file);
-            parsedData = [...parsedData, ...data];
-            newProcessingStatus[fileId] = 'success';
+            try {
+              const data = await parseCSV(file);
+              parsedData = [...parsedData, ...data];
+              newProcessingStatus[fileId] = 'success';
+              toast.success(`Successfully extracted ${data.length} rows from CSV: ${file.name}`);
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              newProcessingStatus[fileId] = 'error';
+              toast.error(`Error processing CSV: ${file.name}. ${errorMessage}`);
+              setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${errorMessage}`]);
+              logFileError(file, error instanceof Error ? error : new Error('Unknown error'));
+            }
           } else if (fileExt === 'pdf') {
             try {
               const data = await parsePDF(file);
@@ -102,16 +125,19 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
               newProcessingStatus[fileId] = 'success';
               toast.success(`Successfully extracted data from PDF: ${file.name}`);
             } catch (error) {
-              console.error('PDF parsing error:', error);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
               newProcessingStatus[fileId] = 'error';
-              toast.error(`Error processing PDF: ${file.name}. ${error instanceof Error ? error.message : 'Unknown error'}`);
-              setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+              toast.error(`Error processing PDF: ${file.name}. ${errorMessage}`);
+              setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${errorMessage}`]);
+              logFileError(file, error instanceof Error ? error : new Error('Unknown error'));
             }
           }
         } catch (error) {
           console.error(`Error processing ${file.name}:`, error);
           newProcessingStatus[fileId] = 'error';
-          setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${errorMessage}`]);
+          logFileError(file, error instanceof Error ? error : new Error('Unknown error'));
         }
         
         setProcessingStatus(prev => ({ ...prev, ...newProcessingStatus }));
@@ -141,8 +167,35 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     setUploadErrors([]);
   };
 
+  const getFileIcon = (fileName: string) => {
+    if (fileName.endsWith('.csv')) {
+      return <FileText className="h-5 w-5 text-blue-500" />;
+    } else if (fileName.endsWith('.pdf')) {
+      return <File className="h-5 w-5 text-red-500" />;
+    }
+    return <File className="h-5 w-5 text-gray-500" />;
+  };
+
+  const getFileStatusIcon = (fileId: string) => {
+    const status = processingStatus[fileId];
+    if (status === 'success') {
+      return <Check className="h-4 w-4 text-green-500" />;
+    } else if (status === 'error') {
+      return <AlertCircle className="h-4 w-4 text-destructive" />;
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-4">
+      <Alert variant="default" className="mb-4 bg-muted/50">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Important</AlertTitle>
+        <AlertDescription>
+          Upload CSV or PDF files up to {MAX_FILE_SIZE / (1024 * 1024)}MB. CSV files should have headers in the first row.
+        </AlertDescription>
+      </Alert>
+      
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
           isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
@@ -195,11 +248,7 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
             {uploadedFiles.map((file, index) => (
               <li key={`${file.name}-${index}`} className="p-3 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  {file.name.endsWith('.csv') ? (
-                    <FileText className="h-5 w-5 text-blue-500" />
-                  ) : (
-                    <File className="h-5 w-5 text-red-500" />
-                  )}
+                  {getFileIcon(file.name)}
                   <div>
                     <p className="text-sm font-medium truncate max-w-[200px]">{file.name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -207,17 +256,20 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(index);
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                  <span className="sr-only">Remove</span>
-                </Button>
+                <div className="flex items-center space-x-2">
+                  {getFileStatusIcon(`${file.name}-${Date.now()}`)}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFile(index);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Remove</span>
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

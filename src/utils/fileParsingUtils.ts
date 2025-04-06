@@ -1,5 +1,49 @@
-
 // Utility functions for parsing uploaded files
+
+/**
+ * Maximum file size in bytes (10MB)
+ */
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+/**
+ * Supported file types
+ */
+export const SUPPORTED_FILE_TYPES = {
+  CSV: 'text/csv',
+  PDF: 'application/pdf',
+};
+
+/**
+ * Validate file before processing
+ */
+export const validateFile = (file: File): { valid: boolean; error?: string } => {
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    return { 
+      valid: false, 
+      error: `File too large. Maximum size is ${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(1)}MB.` 
+    };
+  }
+  
+  // Check file type using MIME type
+  const fileType = file.type.toLowerCase();
+  const fileExt = file.name.split('.').pop()?.toLowerCase();
+  
+  // Primary check: MIME type
+  const isValidMimeType = Object.values(SUPPORTED_FILE_TYPES).includes(fileType);
+  
+  // Secondary check: file extension (as fallback if browser doesn't report correct MIME)
+  const isValidExtension = fileExt === 'csv' || fileExt === 'pdf';
+  
+  if (!isValidMimeType && !isValidExtension) {
+    return { 
+      valid: false, 
+      error: `Unsupported file type. Please upload a CSV or PDF file.` 
+    };
+  }
+  
+  return { valid: true };
+};
 
 /**
  * Parse a CSV file and return structured data
@@ -19,12 +63,17 @@ export const parseCSV = (file: File): Promise<any[]> => {
         // Split by lines
         const lines = csv.split(/\r\n|\n/);
         if (lines.length < 2) {
-          reject(new Error('CSV file appears to be empty or invalid'));
+          reject(new Error('CSV file appears to be empty or invalid. The file should contain at least headers and one data row.'));
           return;
         }
         
         // Extract headers (first line)
         const headers = lines[0].split(',').map(header => header.trim());
+        
+        if (headers.length === 0 || headers.some(h => !h)) {
+          reject(new Error('Invalid CSV structure. Headers are missing or improperly formatted.'));
+          return;
+        }
         
         // Parse data rows
         const data = [];
@@ -70,14 +119,19 @@ export const parseCSV = (file: File): Promise<any[]> => {
           console.warn(`CSV parsing had ${errors.length} issues:`, errors);
         }
         
+        if (data.length === 0) {
+          reject(new Error('No valid data rows found in the CSV file. Please check the file format.'));
+          return;
+        }
+        
         resolve(data);
       } catch (error) {
-        reject(error);
+        reject(new Error(`Error parsing CSV: ${error instanceof Error ? error.message : 'Unknown error'}`));
       }
     };
     
     reader.onerror = () => {
-      reject(new Error('Error reading file'));
+      reject(new Error('Error reading file. The file might be corrupted or inaccessible.'));
     };
     
     reader.readAsText(file);
@@ -96,7 +150,7 @@ export const parsePDF = (file: File): Promise<any[]> => {
       try {
         const pdfData = event.target?.result;
         if (!pdfData) {
-          reject(new Error('Failed to read PDF file'));
+          reject(new Error('Failed to read PDF file. The file might be corrupted.'));
           return;
         }
         
@@ -118,12 +172,12 @@ export const parsePDF = (file: File): Promise<any[]> => {
         
       } catch (error) {
         console.error('Error parsing PDF:', error);
-        reject(new Error('Failed to parse PDF file. Please ensure it is a valid PDF.'));
+        reject(new Error('Failed to parse PDF file. Please ensure it is a valid and accessible PDF document.'));
       }
     };
     
     reader.onerror = () => {
-      reject(new Error('Error reading PDF file'));
+      reject(new Error('Error reading PDF file. The file might be corrupted or inaccessible.'));
     };
     
     reader.readAsArrayBuffer(file);
@@ -213,4 +267,24 @@ export const extractAttributes = (data: any[]): Record<string, any[]> => {
   });
   
   return result;
+};
+
+/**
+ * Logs file upload errors for debugging
+ */
+export const logFileError = (file: File, error: Error): void => {
+  const timestamp = new Date().toISOString();
+  const errorLog = {
+    timestamp,
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    error: error.message,
+    stack: error.stack
+  };
+  
+  console.error(`[${timestamp}] File Upload Error:`, errorLog);
+  
+  // In a production app, you might want to send this to a server-side logging service
+  // sendErrorToLoggingService(errorLog);
 };

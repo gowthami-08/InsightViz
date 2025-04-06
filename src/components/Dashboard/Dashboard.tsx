@@ -6,7 +6,6 @@ import { MetricsOverview } from "./MetricsOverview";
 import { DataTable } from "./DataTable";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { BarChart, LineChart, Download, Mail, BellRing } from 'lucide-react';
-import { TopicsWordCloud } from './TopicsWordCloud';
 import { ExportData } from './ExportData';
 import { EmailReports } from './EmailReports';
 import { CustomAlerts } from './CustomAlerts';
@@ -67,8 +66,7 @@ export const Dashboard = () => {
                   filteredDataCount={filteredData.length}
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  <TopicsWordCloud />
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mt-6">
                   <NaturalLanguageInsights data={filteredData} />
                 </div>
 

@@ -5,7 +5,14 @@ import { FilterBar } from "./FilterBar";
 import { MetricsOverview } from "./MetricsOverview";
 import { DataTable } from "./DataTable";
 import { useDashboardData } from "@/hooks/useDashboardData";
-import { BarChart, LineChart } from 'lucide-react';
+import { BarChart, LineChart, Download, Mail, BellRing } from 'lucide-react';
+import { TopicsWordCloud } from './TopicsWordCloud';
+import { ExportData } from './ExportData';
+import { EmailReports } from './EmailReports';
+import { CustomAlerts } from './CustomAlerts';
+import { PredictiveAnalytics } from './PredictiveAnalytics';
+import { ComparisonMode } from './ComparisonMode';
+import { NaturalLanguageInsights } from './NaturalLanguageInsights';
 
 export const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -28,6 +35,12 @@ export const Dashboard = () => {
       />
       
       <div className="container max-w-7xl mx-auto flex-grow px-4 py-8">
+        <div className="flex flex-wrap gap-4 mb-6 justify-end">
+          <ExportData data={filteredData} />
+          <EmailReports />
+          <CustomAlerts />
+        </div>
+
         <Tabs 
           value={activeTab} 
           onValueChange={setActiveTab}
@@ -53,6 +66,19 @@ export const Dashboard = () => {
                   dashboardData={dashboardData} 
                   filteredDataCount={filteredData.length}
                 />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  <TopicsWordCloud />
+                  <NaturalLanguageInsights data={filteredData} />
+                </div>
+
+                <div className="mt-8">
+                  <PredictiveAnalytics data={filteredData} />
+                </div>
+
+                <div className="mt-8">
+                  <ComparisonMode data={filteredData} />
+                </div>
               </>
             )}
           </TabsContent>

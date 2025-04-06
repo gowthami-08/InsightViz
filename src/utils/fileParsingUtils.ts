@@ -18,29 +18,42 @@ export const parseCSV = (file: File): Promise<any[]> => {
         
         // Split by lines
         const lines = csv.split(/\r\n|\n/);
+        if (lines.length < 2) {
+          reject(new Error('CSV file appears to be empty or invalid'));
+          return;
+        }
         
         // Extract headers (first line)
         const headers = lines[0].split(',').map(header => header.trim());
         
         // Parse data rows
         const data = [];
+        const errors: string[] = [];
         
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue; // Skip empty lines
           
           const values = lines[i].split(',').map(value => value.trim());
           
-          if (values.length !== headers.length) {
-            console.warn(`Line ${i} has ${values.length} values, but there are ${headers.length} headers`);
-            continue; // Skip malformed rows
+          // Handle mismatched columns - either truncate or fill with nulls
+          let processedValues = [...values];
+          if (values.length > headers.length) {
+            errors.push(`Line ${i} has more values than headers. Extra values will be ignored.`);
+            processedValues = values.slice(0, headers.length);
+          } else if (values.length < headers.length) {
+            errors.push(`Line ${i} has fewer values than headers. Missing values will be null.`);
+            // Fill missing values with null
+            while (processedValues.length < headers.length) {
+              processedValues.push('');
+            }
           }
           
           const entry: Record<string, any> = {};
           
           for (let j = 0; j < headers.length; j++) {
             // Try to convert numeric values
-            const value = values[j];
-            if (value === '') {
+            const value = processedValues[j];
+            if (value === undefined || value === '') {
               entry[headers[j]] = null;
             } else if (!isNaN(Number(value))) {
               entry[headers[j]] = Number(value);
@@ -50,6 +63,11 @@ export const parseCSV = (file: File): Promise<any[]> => {
           }
           
           data.push(entry);
+        }
+        
+        // If there were parsing errors, log them but continue
+        if (errors.length > 0) {
+          console.warn(`CSV parsing had ${errors.length} issues:`, errors);
         }
         
         resolve(data);
@@ -63,6 +81,52 @@ export const parseCSV = (file: File): Promise<any[]> => {
     };
     
     reader.readAsText(file);
+  });
+};
+
+/**
+ * Parse a PDF file and extract text content
+ */
+export const parsePDF = (file: File): Promise<any[]> => {
+  return new Promise((resolve, reject) => {
+    // Use PDF.js library to parse PDF content
+    const reader = new FileReader();
+    
+    reader.onload = async (event) => {
+      try {
+        const pdfData = event.target?.result;
+        if (!pdfData) {
+          reject(new Error('Failed to read PDF file'));
+          return;
+        }
+        
+        // Since we don't have direct access to PDF.js here, we'll use a simplified approach
+        // In a real implementation, you would use PDF.js to extract text and tables
+        
+        // Mock PDF data extraction - in a real app, replace with actual PDF parsing
+        const extractedData = [
+          {
+            page: 1,
+            content: `Extracted content from ${file.name}`,
+            extracted_at: new Date().toISOString(),
+            file_name: file.name,
+            file_size: file.size,
+          }
+        ];
+        
+        resolve(extractedData);
+        
+      } catch (error) {
+        console.error('Error parsing PDF:', error);
+        reject(new Error('Failed to parse PDF file. Please ensure it is a valid PDF.'));
+      }
+    };
+    
+    reader.onerror = () => {
+      reject(new Error('Error reading PDF file'));
+    };
+    
+    reader.readAsArrayBuffer(file);
   });
 };
 

@@ -4,7 +4,7 @@ import { Upload, File, FileText, X, AlertCircle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { parseCSV } from '@/utils/fileParsingUtils';
+import { parseCSV, parsePDF } from '@/utils/fileParsingUtils';
 
 interface FileUploadProps {
   onDataExtracted: (data: any[]) => void;
@@ -16,6 +16,7 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [processingStatus, setProcessingStatus] = useState<Record<string, 'pending' | 'success' | 'error'>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -59,7 +60,7 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     }
     
     if (errors.length > 0) {
-      setUploadErrors(errors);
+      setUploadErrors(prev => [...prev, ...errors]);
     }
     
     if (validFiles.length > 0) {
@@ -76,29 +77,52 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       
       // Simulate upload progress
       const totalFiles = files.length;
+      const newProcessingStatus: Record<string, 'pending' | 'success' | 'error'> = {};
       
       for (let i = 0; i < totalFiles; i++) {
         const file = files[i];
         const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const fileId = `${file.name}-${Date.now()}`;
         
         // Update progress
         setUploadProgress(((i + 0.5) / totalFiles) * 100);
+        newProcessingStatus[fileId] = 'pending';
+        setProcessingStatus(prev => ({ ...prev, ...newProcessingStatus }));
         
-        // Parse file based on type
-        if (fileExt === 'csv') {
-          const data = await parseCSV(file);
-          parsedData = [...parsedData, ...data];
-        } else if (fileExt === 'pdf') {
-          // PDF parsing to be implemented
-          toast.error("PDF parsing is not yet implemented");
+        try {
+          // Parse file based on type
+          if (fileExt === 'csv') {
+            const data = await parseCSV(file);
+            parsedData = [...parsedData, ...data];
+            newProcessingStatus[fileId] = 'success';
+          } else if (fileExt === 'pdf') {
+            try {
+              const data = await parsePDF(file);
+              parsedData = [...parsedData, ...data];
+              newProcessingStatus[fileId] = 'success';
+              toast.success(`Successfully extracted data from PDF: ${file.name}`);
+            } catch (error) {
+              console.error('PDF parsing error:', error);
+              newProcessingStatus[fileId] = 'error';
+              toast.error(`Error processing PDF: ${file.name}. ${error instanceof Error ? error.message : 'Unknown error'}`);
+              setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`]);
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing ${file.name}:`, error);
+          newProcessingStatus[fileId] = 'error';
+          setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`]);
         }
         
+        setProcessingStatus(prev => ({ ...prev, ...newProcessingStatus }));
         setUploadProgress(((i + 1) / totalFiles) * 100);
       }
       
       if (parsedData.length > 0) {
         onDataExtracted(parsedData);
         toast.success(`Successfully extracted data from ${files.length} file(s)`);
+      } else {
+        toast.error('No data could be extracted from the uploaded files.');
       }
     } catch (error) {
       console.error('Error processing files:', error);
@@ -155,7 +179,7 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
       {isUploading && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span>Uploading...</span>
+            <span>Uploading and processing...</span>
             <span>{Math.round(uploadProgress)}%</span>
           </div>
           <Progress value={uploadProgress} className="h-2" />

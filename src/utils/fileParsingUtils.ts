@@ -190,44 +190,91 @@ export const parsePDF = (file: File): Promise<any[]> => {
 export const analyzeDataSchema = (data: any[]): { 
   fields: { name: string; type: string; sample: any }[]; 
   totalRows: number;
+  numericFields: string[];
+  categoricalFields: string[];
+  possibleDateFields: string[];
 } => {
   if (!data || data.length === 0) {
-    return { fields: [], totalRows: 0 };
+    return { 
+      fields: [], 
+      totalRows: 0,
+      numericFields: [],
+      categoricalFields: [],
+      possibleDateFields: []
+    };
   }
   
   const firstItem = data[0];
+  const numericFields: string[] = [];
+  const categoricalFields: string[] = [];
+  const possibleDateFields: string[] = [];
+  
   const fields = Object.keys(firstItem).map(key => {
     // Determine type based on the first non-null value
     let type = 'unknown';
     let sample = null;
+    let numericCount = 0;
+    let stringCount = 0;
+    let dateCount = 0;
+    let nullCount = 0;
     
-    for (const item of data) {
+    // Sample a subset of the data to determine field type
+    const sampleSize = Math.min(data.length, 100);
+    for (let i = 0; i < sampleSize; i++) {
+      const item = data[i];
       if (item[key] !== null && item[key] !== undefined) {
         sample = item[key];
+        
         if (typeof item[key] === 'number') {
-          type = 'number';
+          numericCount++;
         } else if (typeof item[key] === 'boolean') {
-          type = 'boolean';
+          // Boolean is a special case - treated as categorical
+          stringCount++;
         } else if (typeof item[key] === 'string') {
+          stringCount++;
           // Check if it's a date
           if (!isNaN(Date.parse(item[key]))) {
-            type = 'date';
-          } else {
-            type = 'string';
+            dateCount++;
           }
         } else if (Array.isArray(item[key])) {
-          type = 'array';
+          // Arrays are treated as categorical
+          stringCount++;
         } else if (typeof item[key] === 'object') {
-          type = 'object';
+          // Objects are treated as categorical
+          stringCount++;
         }
-        break;
+      } else {
+        nullCount++;
+      }
+    }
+    
+    // Determine type based on majority of values
+    const totalCount = numericCount + stringCount;
+    if (totalCount > 0) {
+      if (numericCount / totalCount > 0.7) {
+        type = 'number';
+        numericFields.push(key);
+      } else {
+        type = 'string';
+        categoricalFields.push(key);
+        
+        // If more than 70% of non-null values are dates, mark as date
+        if (dateCount / stringCount > 0.7) {
+          possibleDateFields.push(key);
+        }
       }
     }
     
     return { name: key, type, sample };
   });
   
-  return { fields, totalRows: data.length };
+  return { 
+    fields, 
+    totalRows: data.length,
+    numericFields,
+    categoricalFields,
+    possibleDateFields
+  };
 };
 
 /**
@@ -287,4 +334,85 @@ export const logFileError = (file: File, error: Error): void => {
   
   // In a production app, you might want to send this to a server-side logging service
   // sendErrorToLoggingService(errorLog);
+};
+
+/**
+ * Convert data to format suitable for chart libraries
+ * @param data Source data array
+ * @param xField Field to use for X-axis
+ * @param yField Field to use for Y-axis (for numeric charts)
+ * @param chartType Type of chart to prepare data for
+ */
+export const prepareChartData = (
+  data: any[], 
+  xField: string, 
+  yField: string, 
+  chartType: 'bar' | 'line' | 'pie' | 'scatter'
+): any[] => {
+  if (!data || data.length === 0 || !xField) {
+    return [];
+  }
+  
+  switch (chartType) {
+    case 'bar':
+    case 'line': {
+      // Aggregate data by xField
+      const aggregated = new Map();
+      
+      data.forEach(item => {
+        const xValue = item[xField] || 'Unknown';
+        const yValue = parseFloat(item[yField]) || 0;
+        
+        if (aggregated.has(xValue)) {
+          aggregated.set(xValue, aggregated.get(xValue) + yValue);
+        } else {
+          aggregated.set(xValue, yValue);
+        }
+      });
+      
+      return Array.from(aggregated.entries())
+        .map(([x, y]) => ({ 
+          [xField]: x, 
+          [yField]: y 
+        }))
+        .sort((a, b) => (b[yField] as number) - (a[yField] as number));
+    }
+    
+    case 'pie': {
+      // Count occurrences of each value in xField
+      const counts = new Map();
+      
+      data.forEach(item => {
+        const value = item[xField] || 'Unknown';
+        
+        if (counts.has(value)) {
+          counts.set(value, counts.get(value) + 1);
+        } else {
+          counts.set(value, 1);
+        }
+      });
+      
+      return Array.from(counts.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => (b.value as number) - (a.value as number));
+    }
+    
+    case 'scatter': {
+      // Return raw data points with x and y values
+      return data
+        .filter(item => 
+          item[xField] !== undefined && 
+          item[xField] !== null && 
+          item[yField] !== undefined && 
+          item[yField] !== null
+        )
+        .map(item => ({
+          [xField]: parseFloat(item[xField]) || 0,
+          [yField]: parseFloat(item[yField]) || 0
+        }));
+    }
+    
+    default:
+      return [];
+  }
 };

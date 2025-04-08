@@ -2,10 +2,11 @@
 import { RecentFiles } from "@/components/Dashboard/RecentFiles";
 import { SavedFilters } from "@/components/Dashboard/SavedFilters";
 import { Button } from "@/components/ui/button";
-import { Upload, Search, Clock } from 'lucide-react';
+import { Upload, Search, Clock, Zap } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { FilterBar } from "@/components/Dashboard/FilterBar";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { InsightsSummary } from "@/components/Dashboard/InsightsSummary";
 
 export default function DashboardHome() {
   const navigate = useNavigate();
@@ -54,8 +55,10 @@ export default function DashboardHome() {
       </div>
       
       <div className="space-y-8">
-        <div className="grid grid-cols-1 gap-6">
+        {/* Two-column layout for top section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <RecentFiles />
+          <InsightsSummary />
         </div>
         
         <div className="grid grid-cols-1 gap-6">

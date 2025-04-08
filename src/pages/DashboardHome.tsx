@@ -38,13 +38,13 @@ export default function DashboardHome() {
           
           <SavedFilters 
             currentFilters={filters} 
-            applyFilter={(filters) => {
+            applyFilter={(savedFilters) => {
               // Reset current filters
               resetFilters();
               // Apply saved filters
-              Object.entries(filters).forEach(([key, value]) => {
-                if (value !== null) {
-                  // Explicitly cast the key to the expected type
+              Object.entries(savedFilters).forEach(([key, value]) => {
+                if (value !== null && isValidFilterKey(key, filters)) {
+                  // Now TypeScript knows this is a valid key
                   updateFilter(key as keyof typeof filters, value as string | number | null);
                 }
               });
@@ -88,4 +88,9 @@ export default function DashboardHome() {
       </div>
     </div>
   );
+}
+
+// Helper function to check if a key is a valid filter key
+function isValidFilterKey(key: string, filters: any): key is keyof typeof filters {
+  return key in filters;
 }

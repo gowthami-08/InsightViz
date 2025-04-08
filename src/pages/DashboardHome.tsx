@@ -91,6 +91,6 @@ export default function DashboardHome() {
 }
 
 // Helper function to check if a key is a valid filter key
-function isValidFilterKey(key: string, filters: any): key is keyof typeof filters {
+function isValidFilterKey(key: string, filters: any): key is string {
   return key in filters;
 }

@@ -44,7 +44,8 @@ export default function DashboardHome() {
               // Apply saved filters
               Object.entries(filters).forEach(([key, value]) => {
                 if (value !== null) {
-                  updateFilter(key as any, value);
+                  // Explicitly cast the key to the expected type
+                  updateFilter(key as keyof typeof filters, value as string | number | null);
                 }
               });
             }} 

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Download, FileSpreadsheet, FileText, FilePdf, Loader2 } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, File, Loader2 } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -183,7 +183,7 @@ export const EnhancedExport = ({ data }: EnhancedExportProps) => {
           <span>Export as Excel</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={exportToPDF} className="flex items-center gap-2">
-          <FilePdf className="h-4 w-4" />
+          <File className="h-4 w-4" />
           <span>Export as PDF</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

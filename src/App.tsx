@@ -11,6 +11,7 @@ import { initDatabase } from "./services/database";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { Layout } from "./components/Layout";
 import { FileUploadPage } from "./components/Dashboard/FileUploadPage";
+import DashboardHome from "./pages/DashboardHome";
 
 const queryClient = new QueryClient();
 
@@ -48,7 +49,8 @@ const App = () => {
                 </div>
               )}
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<DashboardHome />} />
+                <Route path="/dashboard" element={<Index />} />
                 <Route path="/upload" element={<FileUploadPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

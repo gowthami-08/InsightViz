@@ -1,306 +1,207 @@
 
 import { useState, useRef } from 'react';
-import { Upload, File, FileText, X, AlertCircle, Check, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
-import { 
-  parseCSV, 
-  parsePDF, 
-  validateFile, 
-  MAX_FILE_SIZE,
-  logFileError 
-} from '@/utils/fileParsingUtils';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { parseCSV, parsePDF, analyzeDataSchema } from '@/utils/fileParsingUtils';
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Loader2, Upload, FileType, File, FileText } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from "@/hooks/use-toast";
+import { getFromLocalStorage, saveToLocalStorage, STORAGE_KEYS } from '@/utils/localStorageUtils';
+import { RecentFile } from './RecentFiles';
 
 interface FileUploadProps {
   onDataExtracted: (data: any[]) => void;
 }
 
 export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
-  const [processingStatus, setProcessingStatus] = useState<Record<string, 'pending' | 'success' | 'error'>>({});
+  const [dragActive, setDragActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      handleFiles(Array.from(files));
+    e.stopPropagation();
+    
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
+    e.stopPropagation();
+    setDragActive(false);
     
-    if (e.dataTransfer.files) {
-      handleFiles(Array.from(e.dataTransfer.files));
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleFiles = async (files: File[]) => {
-    const validFiles: File[] = [];
-    const errors: string[] = [];
-    
-    // Validate files
-    for (const file of files) {
-      const validation = validateFile(file);
-      
-      if (validation.valid) {
-        validFiles.push(file);
-      } else {
-        errors.push(`${file.name}: ${validation.error}`);
-      }
-    }
-    
-    if (errors.length > 0) {
-      setUploadErrors(prev => [...prev, ...errors]);
-      
-      // Show toast for validation errors
-      if (errors.length === 1) {
-        toast.error(errors[0]);
-      } else {
-        toast.error(`${errors.length} files had validation errors. Please check the error section below.`);
-      }
-    }
-    
-    if (validFiles.length > 0) {
-      setUploadedFiles(prev => [...prev, ...validFiles]);
-      processFiles(validFiles);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
     }
   };
 
-  const processFiles = async (files: File[]) => {
-    setIsUploading(true);
+  const processFile = async (file: File) => {
+    setSelectedFile(file);
+    setIsLoading(true);
+    
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
     try {
-      let parsedData: any[] = [];
+      let extractedData: any[] = [];
       
-      // Simulate upload progress
-      const totalFiles = files.length;
-      const newProcessingStatus: Record<string, 'pending' | 'success' | 'error'> = {};
-      
-      for (let i = 0; i < totalFiles; i++) {
-        const file = files[i];
-        const fileExt = file.name.split('.').pop()?.toLowerCase();
-        const fileId = `${file.name}-${Date.now()}`;
-        
-        // Update progress
-        setUploadProgress(((i + 0.5) / totalFiles) * 100);
-        newProcessingStatus[fileId] = 'pending';
-        setProcessingStatus(prev => ({ ...prev, ...newProcessingStatus }));
-        
-        try {
-          // Parse file based on type
-          if (fileExt === 'csv') {
-            try {
-              const data = await parseCSV(file);
-              parsedData = [...parsedData, ...data];
-              newProcessingStatus[fileId] = 'success';
-              toast.success(`Successfully extracted ${data.length} rows from CSV: ${file.name}`);
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-              newProcessingStatus[fileId] = 'error';
-              toast.error(`Error processing CSV: ${file.name}. ${errorMessage}`);
-              setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${errorMessage}`]);
-              logFileError(file, error instanceof Error ? error : new Error('Unknown error'));
-            }
-          } else if (fileExt === 'pdf') {
-            try {
-              const data = await parsePDF(file);
-              parsedData = [...parsedData, ...data];
-              newProcessingStatus[fileId] = 'success';
-              toast.success(`Successfully extracted data from PDF: ${file.name}`);
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-              newProcessingStatus[fileId] = 'error';
-              toast.error(`Error processing PDF: ${file.name}. ${errorMessage}`);
-              setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${errorMessage}`]);
-              logFileError(file, error instanceof Error ? error : new Error('Unknown error'));
-            }
-          }
-        } catch (error) {
-          console.error(`Error processing ${file.name}:`, error);
-          newProcessingStatus[fileId] = 'error';
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          setUploadErrors(prev => [...prev, `Error processing ${file.name}: ${errorMessage}`]);
-          logFileError(file, error instanceof Error ? error : new Error('Unknown error'));
-        }
-        
-        setProcessingStatus(prev => ({ ...prev, ...newProcessingStatus }));
-        setUploadProgress(((i + 1) / totalFiles) * 100);
+      if (fileExtension === 'csv') {
+        extractedData = await parseCSV(file);
+      } else if (fileExtension === 'pdf') {
+        extractedData = await parsePDF(file);
+      } else {
+        throw new Error(`Unsupported file format: ${fileExtension}`);
       }
       
-      if (parsedData.length > 0) {
-        onDataExtracted(parsedData);
-        toast.success(`Successfully extracted data from ${files.length} file(s)`);
+      if (extractedData.length > 0) {
+        // Save to recent files
+        saveToRecentFiles(file, extractedData);
+        
+        // Send data to parent component
+        onDataExtracted(extractedData);
+        
+        toast({
+          title: "File processed successfully",
+          description: `Extracted ${extractedData.length} records from ${file.name}`,
+        });
       } else {
-        toast.error('No data could be extracted from the uploaded files.');
+        throw new Error("No data could be extracted from the file");
       }
     } catch (error) {
-      console.error('Error processing files:', error);
-      toast.error('Error processing files. Please try again.');
+      console.error("Error processing file:", error);
+      toast({
+        title: "Error processing file",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive"
+      });
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      setIsLoading(false);
     }
   };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const clearErrors = () => {
-    setUploadErrors([]);
-  };
-
-  const getFileIcon = (fileName: string) => {
-    if (fileName.endsWith('.csv')) {
-      return <FileText className="h-5 w-5 text-blue-500" />;
-    } else if (fileName.endsWith('.pdf')) {
-      return <File className="h-5 w-5 text-red-500" />;
+  
+  const saveToRecentFiles = (file: File, data: any[]) => {
+    try {
+      // Get existing recent files
+      const recentFiles = getFromLocalStorage<RecentFile[]>(STORAGE_KEYS.RECENT_FILES, []);
+      
+      // Create new recent file entry
+      const newRecentFile: RecentFile = {
+        id: Date.now().toString(),
+        name: file.name,
+        type: file.type || file.name.split('.').pop() || 'unknown',
+        size: file.size,
+        records: data.length,
+        uploadedAt: Date.now(),
+        // Store a small preview of the data (first 5 records)
+        previewData: data.slice(0, 5)
+      };
+      
+      // Add to the beginning of the array (most recent first)
+      const updatedRecentFiles = [newRecentFile, ...recentFiles].slice(0, 10); // Keep only 10 most recent
+      
+      // Save to local storage
+      saveToLocalStorage(STORAGE_KEYS.RECENT_FILES, updatedRecentFiles);
+    } catch (error) {
+      console.error("Error saving recent file:", error);
     }
-    return <File className="h-5 w-5 text-gray-500" />;
-  };
-
-  const getFileStatusIcon = (fileId: string) => {
-    const status = processingStatus[fileId];
-    if (status === 'success') {
-      return <Check className="h-4 w-4 text-green-500" />;
-    } else if (status === 'error') {
-      return <AlertCircle className="h-4 w-4 text-destructive" />;
-    }
-    return null;
   };
 
   return (
     <div className="space-y-4">
-      <Alert variant="default" className="mb-4 bg-muted/50">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Important</AlertTitle>
-        <AlertDescription>
-          Upload CSV or PDF files up to {MAX_FILE_SIZE / (1024 * 1024)}MB. CSV files should have headers in the first row.
-        </AlertDescription>
-      </Alert>
-      
-      <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-          isDragging ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+      <div 
+        className={`border-2 border-dashed rounded-lg p-6 transition-colors relative ${
+          dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
         }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
       >
         <input
           type="file"
+          id="file-upload"
           ref={fileInputRef}
-          onChange={handleFileSelect}
           className="hidden"
-          multiple
+          onChange={handleFileChange}
           accept=".csv,.pdf"
         />
         
-        <div className="flex flex-col items-center justify-center space-y-2">
-          <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-          <h3 className="text-lg font-medium">Upload Files</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            Drag and drop CSV or PDF files, or click to browse
-          </p>
-          <Button variant="outline" size="sm" onClick={(e) => {
-            e.stopPropagation();
-            fileInputRef.current?.click();
-          }}>
-            Select Files
-          </Button>
-        </div>
+        <Label 
+          htmlFor="file-upload"
+          className="flex flex-col items-center justify-center gap-4 cursor-pointer h-32"
+        >
+          <div className="rounded-full bg-primary/10 p-3">
+            <Upload className="h-6 w-6 text-primary" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-sm font-medium">
+              Drag & drop your file here or click to browse
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Supported formats: CSV, PDF
+            </p>
+          </div>
+        </Label>
       </div>
       
-      {isUploading && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Uploading and processing...</span>
-            <span>{Math.round(uploadProgress)}%</span>
-          </div>
-          <Progress value={uploadProgress} className="h-2" />
-        </div>
-      )}
-      
-      {uploadedFiles.length > 0 && (
-        <div className="border rounded-lg divide-y">
-          <div className="p-3 bg-muted/50 font-medium text-sm">
-            Uploaded Files
-          </div>
-          <ul className="divide-y">
-            {uploadedFiles.map((file, index) => (
-              <li key={`${file.name}-${index}`} className="p-3 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {getFileIcon(file.name)}
-                  <div>
-                    <p className="text-sm font-medium truncate max-w-[200px]">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {(file.size / 1024).toFixed(2)} KB
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {getFileStatusIcon(`${file.name}-${Date.now()}`)}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile(index);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Remove</span>
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      
-      {uploadErrors.length > 0 && (
-        <div className="border border-destructive/50 rounded-lg divide-y">
-          <div className="p-3 bg-destructive/10 font-medium text-sm text-destructive flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4" />
-              <span>Upload Errors</span>
+      {selectedFile && (
+        <div className="bg-muted rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-background p-2">
+              {selectedFile.name.endsWith('.csv') ? (
+                <FileText className="h-5 w-5 text-primary" />
+              ) : selectedFile.name.endsWith('.pdf') ? (
+                <FileType className="h-5 w-5 text-primary" />
+              ) : (
+                <File className="h-5 w-5 text-primary" />
+              )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-destructive"
-              onClick={clearErrors}
-            >
-              Clear All
-            </Button>
+            <div className="space-y-1 flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {(selectedFile.size / 1024).toFixed(2)} KB
+              </p>
+            </div>
+            {isLoading && (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            )}
           </div>
-          <ul className="divide-y">
-            {uploadErrors.map((error, index) => (
-              <li key={index} className="p-3 text-sm text-destructive">
-                {error}
-              </li>
-            ))}
-          </ul>
         </div>
       )}
+      
+      <Separator />
+      
+      <div className="flex flex-col items-center justify-center pt-2">
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isLoading}
+          variant="default"
+          className="w-full sm:w-auto"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Select File
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };

@@ -6,11 +6,14 @@ import { DataVisualization } from './DataVisualization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Upload, Table, BarChart } from 'lucide-react';
+import { Upload, Table, BarChart, ChevronLeft } from 'lucide-react';
+import { EnhancedExport } from './EnhancedExport';
+import { useNavigate } from 'react-router-dom';
 
 export const FileUploadPage = () => {
   const [extractedData, setExtractedData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("upload");
+  const navigate = useNavigate();
   
   const handleDataExtracted = (data: any[]) => {
     setExtractedData(data);
@@ -22,11 +25,26 @@ export const FileUploadPage = () => {
     <div className="container mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">File Upload & Analysis</h1>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-1" 
+              onClick={() => navigate('/')}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight mt-4">File Upload & Analysis</h1>
           <p className="text-muted-foreground">
             Upload CSV and PDF files to analyze, visualize and extract insights from your data
           </p>
         </div>
+        
+        {extractedData.length > 0 && (
+          <EnhancedExport data={extractedData} />
+        )}
       </div>
       
       <TabGroup 

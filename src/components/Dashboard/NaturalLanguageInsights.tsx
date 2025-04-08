@@ -1,9 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpIcon, ArrowDownIcon, RefreshCw, BrainCircuit, HelpCircle } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, RefreshCw, BrainCircuit, HelpCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@/components/ui/tabs";
 import { 
   HoverCard,
   HoverCardContent,
@@ -72,7 +72,7 @@ export const NaturalLanguageInsights = ({ data }: NaturalLanguageInsightsProps) 
           description: "64% of high-intensity insights are concentrated in just 3 topics, suggesting potential vulnerability to disruption in these areas. Recommended action: diversify focus across more topics to mitigate risk.",
           type: 'negative',
           confidence: 0.89,
-          category: 'risk',
+          category: 'correlation',
           timestamp: Date.now()
         },
         {
@@ -149,7 +149,7 @@ export const NaturalLanguageInsights = ({ data }: NaturalLanguageInsightsProps) 
       case 'recommendation':
         return <BrainCircuit className="h-3 w-3" />;
       case 'correlation':
-        return <ArrowRightCircle className="h-3 w-3" />;
+        return <ArrowRight className="h-3 w-3" />;
       default:
         return null;
     }
@@ -224,90 +224,314 @@ export const NaturalLanguageInsights = ({ data }: NaturalLanguageInsightsProps) 
         </Button>
       </CardHeader>
       
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+      <TabGroup value={activeTab} onValueChange={setActiveTab}>
         <div className="px-6">
-          <TabsList className="w-full justify-start mb-2">
-            <TabsTrigger value="all" className="text-xs">All Insights</TabsTrigger>
-            <TabsTrigger value="positive" className="text-xs">Positive</TabsTrigger>
-            <TabsTrigger value="negative" className="text-xs">Negative</TabsTrigger>
-            <TabsTrigger value="recommendations" className="text-xs">Recommendations</TabsTrigger>
-          </TabsList>
+          <TabList className="w-full justify-start mb-2">
+            <Tab value="all" className="text-xs">All Insights</Tab>
+            <Tab value="positive" className="text-xs">Positive</Tab>
+            <Tab value="negative" className="text-xs">Negative</Tab>
+            <Tab value="recommendations" className="text-xs">Recommendations</Tab>
+          </TabList>
           <Separator />
         </div>
         
-        <CardContent className="pt-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                <p className="text-muted-foreground">Analyzing data patterns...</p>
-                <p className="text-xs text-muted-foreground mt-1">Identifying insights, trends and recommendations</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredInsights.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No insights found for the selected filter.</p>
+        <TabPanels>
+          <TabPanel value="all" className="animate-fade-in">
+            <CardContent className="pt-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                    <p className="text-muted-foreground">Analyzing data patterns...</p>
+                    <p className="text-xs text-muted-foreground mt-1">Identifying insights, trends and recommendations</p>
+                  </div>
                 </div>
               ) : (
-                filteredInsights.map((insight) => (
-                  <div 
-                    key={insight.id} 
-                    className={cn(
-                      "p-3 bg-card rounded-md shadow-sm border", 
-                      getClassForType(insight.type)
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center">
-                        {getIconForType(insight.type)}
-                        <h3 className="font-medium ml-2">{insight.title}</h3>
-                      </div>
-                      <div>
-                        <span className={cn(
-                          "text-xs px-2 py-0.5 rounded-full",
-                          getConfidenceBadgeClass(insight.confidence)
-                        )}>
-                          {Math.round(insight.confidence * 100)}% confidence
-                        </span>
-                      </div>
+                <div className="space-y-4">
+                  {filteredInsights.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No insights found for the selected filter.</p>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
-                    <div className="flex items-center justify-between text-xs mt-2">
-                      <div className="flex items-center text-muted-foreground">
-                        <span className="flex items-center mr-2">
-                          {getCategoryIcon(insight.category)}
-                          <span className="ml-1 capitalize">{insight.category}</span>
-                        </span>
-                        <span>{new Date(insight.timestamp).toLocaleDateString()}</span>
+                  ) : (
+                    filteredInsights.map((insight) => (
+                      <div 
+                        key={insight.id} 
+                        className={cn(
+                          "p-3 bg-card rounded-md shadow-sm border", 
+                          getClassForType(insight.type)
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center">
+                            {getIconForType(insight.type)}
+                            <h3 className="font-medium ml-2">{insight.title}</h3>
+                          </div>
+                          <div>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-full",
+                              getConfidenceBadgeClass(insight.confidence)
+                            )}>
+                              {Math.round(insight.confidence * 100)}% confidence
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
+                        <div className="flex items-center justify-between text-xs mt-2">
+                          <div className="flex items-center text-muted-foreground">
+                            <span className="flex items-center mr-2">
+                              {getCategoryIcon(insight.category)}
+                              <span className="ml-1 capitalize">{insight.category}</span>
+                            </span>
+                            <span>{new Date(insight.timestamp).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleSaveInsight(insight.id)}
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleShareInsight(insight.id)}
+                            >
+                              Share
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 px-2 text-xs"
-                          onClick={() => handleSaveInsight(insight.id)}
-                        >
-                          Save
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 px-2 text-xs"
-                          onClick={() => handleShareInsight(insight.id)}
-                        >
-                          Share
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                    ))
+                  )}
+                </div>
               )}
-            </div>
-          )}
-        </CardContent>
-      </Tabs>
+            </CardContent>
+          </TabPanel>
+          
+          <TabPanel value="positive" className="animate-fade-in">
+            <CardContent className="pt-4">
+              {/* Same content structure as "all" tab but with filtered data */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <RefreshCw className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredInsights.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No positive insights found.</p>
+                    </div>
+                  ) : (
+                    // Same rendering logic as in the "all" tab
+                    filteredInsights.map((insight) => (
+                      <div 
+                        key={insight.id} 
+                        className={cn(
+                          "p-3 bg-card rounded-md shadow-sm border", 
+                          getClassForType(insight.type)
+                        )}
+                      >
+                        {/* Same insight card content as in "all" tab */}
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center">
+                            {getIconForType(insight.type)}
+                            <h3 className="font-medium ml-2">{insight.title}</h3>
+                          </div>
+                          <div>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-full",
+                              getConfidenceBadgeClass(insight.confidence)
+                            )}>
+                              {Math.round(insight.confidence * 100)}% confidence
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
+                        <div className="flex items-center justify-between text-xs mt-2">
+                          <div className="flex items-center text-muted-foreground">
+                            <span className="flex items-center mr-2">
+                              {getCategoryIcon(insight.category)}
+                              <span className="ml-1 capitalize">{insight.category}</span>
+                            </span>
+                            <span>{new Date(insight.timestamp).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleSaveInsight(insight.id)}
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleShareInsight(insight.id)}
+                            >
+                              Share
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </TabPanel>
+          
+          <TabPanel value="negative" className="animate-fade-in">
+            <CardContent className="pt-4">
+              {/* Similar content as other tabs */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <RefreshCw className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredInsights.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No negative insights found.</p>
+                    </div>
+                  ) : (
+                    filteredInsights.map((insight) => (
+                      <div 
+                        key={insight.id} 
+                        className={cn(
+                          "p-3 bg-card rounded-md shadow-sm border", 
+                          getClassForType(insight.type)
+                        )}
+                      >
+                        {/* Same insight card structure */}
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center">
+                            {getIconForType(insight.type)}
+                            <h3 className="font-medium ml-2">{insight.title}</h3>
+                          </div>
+                          <div>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-full",
+                              getConfidenceBadgeClass(insight.confidence)
+                            )}>
+                              {Math.round(insight.confidence * 100)}% confidence
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
+                        <div className="flex items-center justify-between text-xs mt-2">
+                          <div className="flex items-center text-muted-foreground">
+                            <span className="flex items-center mr-2">
+                              {getCategoryIcon(insight.category)}
+                              <span className="ml-1 capitalize">{insight.category}</span>
+                            </span>
+                            <span>{new Date(insight.timestamp).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleSaveInsight(insight.id)}
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleShareInsight(insight.id)}
+                            >
+                              Share
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </TabPanel>
+          
+          <TabPanel value="recommendations" className="animate-fade-in">
+            <CardContent className="pt-4">
+              {/* Similar content as other tabs */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <RefreshCw className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredInsights.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No recommendations found.</p>
+                    </div>
+                  ) : (
+                    filteredInsights.map((insight) => (
+                      <div 
+                        key={insight.id} 
+                        className={cn(
+                          "p-3 bg-card rounded-md shadow-sm border", 
+                          getClassForType(insight.type)
+                        )}
+                      >
+                        {/* Same insight card structure */}
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center">
+                            {getIconForType(insight.type)}
+                            <h3 className="font-medium ml-2">{insight.title}</h3>
+                          </div>
+                          <div>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-full",
+                              getConfidenceBadgeClass(insight.confidence)
+                            )}>
+                              {Math.round(insight.confidence * 100)}% confidence
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
+                        <div className="flex items-center justify-between text-xs mt-2">
+                          <div className="flex items-center text-muted-foreground">
+                            <span className="flex items-center mr-2">
+                              {getCategoryIcon(insight.category)}
+                              <span className="ml-1 capitalize">{insight.category}</span>
+                            </span>
+                            <span>{new Date(insight.timestamp).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleSaveInsight(insight.id)}
+                            >
+                              Save
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 px-2 text-xs"
+                              onClick={() => handleShareInsight(insight.id)}
+                            >
+                              Share
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
     </Card>
   );
 };

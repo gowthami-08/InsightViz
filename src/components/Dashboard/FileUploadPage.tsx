@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { FileUpload } from './FileUpload';
 import { DataPreview } from './DataPreview';
+import { DataVisualization } from './DataVisualization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';

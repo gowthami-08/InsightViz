@@ -133,41 +133,40 @@ export const SavedFilters = ({ currentFilters, applyFilter }: SavedFiltersProps)
               </div>
             ))
           )}
-          <DialogTrigger asChild onClick={() => setIsDialogOpen(true)}>
-            <Button variant="outline" className="w-full mt-2">
-              <BookmarkPlus className="h-4 w-4 mr-2" />
-              Save Current Filters
-            </Button>
-          </DialogTrigger>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full mt-2">
+                <BookmarkPlus className="h-4 w-4 mr-2" />
+                Save Current Filters
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Save Current Filters</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Filter name"
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    id="filter-name"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={saveCurrentFilter}>
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Filter
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </DropdownMenuContent>
       </DropdownMenu>
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Save Current Filters</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Input
-                placeholder="Filter name"
-                value={filterName}
-                onChange={(e) => setFilterName(e.target.value)}
-                id="filter-name"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveCurrentFilter}>
-              <Check className="h-4 w-4 mr-2" />
-              Save Filter
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

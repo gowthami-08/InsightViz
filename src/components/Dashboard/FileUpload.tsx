@@ -1,13 +1,14 @@
 
 import { useState, useRef } from 'react';
-import { parseCSV, parsePDF, analyzeDataSchema } from '@/utils/fileParsingUtils';
+import { parseCSV, parsePDF, analyzeDataSchema, validateFile } from '@/utils/fileParsingUtils';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, FileType, File, FileText } from 'lucide-react';
+import { Loader2, Upload, FileType, File, FileText, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from "@/hooks/use-toast";
 import { getFromLocalStorage, saveToLocalStorage, STORAGE_KEYS } from '@/utils/localStorageUtils';
 import { RecentFile } from './RecentFiles';
+import { Progress } from '@/components/ui/progress';
 
 interface FileUploadProps {
   onDataExtracted: (data: any[]) => void;
@@ -16,7 +17,9 @@ interface FileUploadProps {
 export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [processProgress, setProcessProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -50,11 +53,33 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
   const processFile = async (file: File) => {
     setSelectedFile(file);
     setIsLoading(true);
+    setProcessProgress(0);
+    setUploadSuccess(false);
     
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
+    // Validate file first
+    const validation = validateFile(file);
+    if (!validation.valid) {
+      toast({
+        title: "Invalid file",
+        description: validation.error,
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       let extractedData: any[] = [];
+      
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setProcessProgress(prev => {
+          const newProgress = prev + (100 - prev) * 0.2;
+          return Math.min(newProgress, 95);
+        });
+      }, 300);
       
       if (fileExtension === 'csv') {
         extractedData = await parseCSV(file);
@@ -64,9 +89,17 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
         throw new Error(`Unsupported file format: ${fileExtension}`);
       }
       
+      clearInterval(progressInterval);
+      
       if (extractedData.length > 0) {
         // Save to recent files
         saveToRecentFiles(file, extractedData);
+        
+        // Set progress to 100%
+        setProcessProgress(100);
+        
+        // Indicate success
+        setUploadSuccess(true);
         
         // Send data to parent component
         onDataExtracted(extractedData);
@@ -75,6 +108,11 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
           title: "File processed successfully",
           description: `Extracted ${extractedData.length} records from ${file.name}`,
         });
+        
+        // Animate transition
+        setTimeout(() => {
+          // Trigger tab change from parent component
+        }, 1500);
       } else {
         throw new Error("No data could be extracted from the file");
       }
@@ -121,7 +159,7 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
     <div className="space-y-4">
       <div 
         className={`border-2 border-dashed rounded-lg p-6 transition-colors relative ${
-          dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+          dragActive ? 'border-primary bg-primary/5' : uploadSuccess ? 'border-green-400 bg-green-50 dark:bg-green-900/20' : 'border-muted-foreground/25'
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -141,18 +179,48 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
           htmlFor="file-upload"
           className="flex flex-col items-center justify-center gap-4 cursor-pointer h-32"
         >
-          <div className="rounded-full bg-primary/10 p-3">
-            <Upload className="h-6 w-6 text-primary" />
-          </div>
-          <div className="text-center space-y-1">
-            <p className="text-sm font-medium">
-              Drag & drop your file here or click to browse
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Supported formats: CSV, PDF
-            </p>
-          </div>
+          {uploadSuccess ? (
+            <div className="flex flex-col items-center justify-center animate-fade-in">
+              <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-3">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="text-center space-y-1 mt-4">
+                <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                  Upload Complete!
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Your file has been processed successfully.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className={`rounded-full ${isLoading ? 'bg-primary/20' : 'bg-primary/10'} p-3`}>
+                <Upload className={`h-6 w-6 ${isLoading ? 'text-primary/50' : 'text-primary'}`} />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-sm font-medium">
+                  {isLoading ? 'Processing your file...' : 'Drag & drop your file here or click to browse'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Supported formats: CSV, PDF
+                </p>
+              </div>
+            </>
+          )}
         </Label>
+        
+        {isLoading && (
+          <div className="absolute inset-x-0 bottom-4 px-6">
+            <Progress value={processProgress} className="h-1" />
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              {processProgress < 30 ? 'Reading file...' : 
+               processProgress < 60 ? 'Processing data...' : 
+               processProgress < 90 ? 'Analyzing content...' : 
+               'Finalizing...'}
+            </p>
+          </div>
+        )}
       </div>
       
       {selectedFile && (
@@ -176,6 +244,9 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
             {isLoading && (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             )}
+            {uploadSuccess && (
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            )}
           </div>
         </div>
       )}
@@ -186,13 +257,18 @@ export const FileUpload = ({ onDataExtracted }: FileUploadProps) => {
         <Button
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading}
-          variant="default"
+          variant={uploadSuccess ? "outline" : "default"}
           className="w-full sm:w-auto"
         >
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing...
+            </>
+          ) : uploadSuccess ? (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Another File
             </>
           ) : (
             <>

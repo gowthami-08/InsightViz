@@ -3,9 +3,13 @@ import { useState, useMemo } from 'react';
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { FileText, BarChart, Download } from 'lucide-react';
+import { FileText, BarChart, Download, TrendingUp, Activity, Lightbulb } from 'lucide-react';
 import { analyzeDataSchema } from '@/utils/fileParsingUtils';
 import { DataVisualization } from './DataVisualization';
+import { DataSummary } from './DataSummary';
+import { TimeSeriesChart } from './TimeSeriesChart';
+import { DataInsights } from './DataInsights';
+import { TrendingTopics } from './TrendingTopics';
 
 interface DataPreviewProps {
   data: any[];
@@ -81,14 +85,26 @@ export const DataPreview = ({ data }: DataPreviewProps) => {
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <TabList className="grid w-full max-w-[400px] grid-cols-2">
+        <TabList className="grid w-full max-w-[600px] grid-cols-5">
           <Tab value="table" className="flex items-center justify-center gap-2">
             <FileText className="h-4 w-4" />
             Table View
           </Tab>
+          <Tab value="summary" className="flex items-center justify-center gap-2">
+            <Activity className="h-4 w-4" />
+            Summary
+          </Tab>
           <Tab value="visualization" className="flex items-center justify-center gap-2">
             <BarChart className="h-4 w-4" />
             Visualization
+          </Tab>
+          <Tab value="timeseries" className="flex items-center justify-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Time Analysis
+          </Tab>
+          <Tab value="insights" className="flex items-center justify-center gap-2">
+            <Lightbulb className="h-4 w-4" />
+            AI Insights
           </Tab>
         </TabList>
         
@@ -127,8 +143,23 @@ export const DataPreview = ({ data }: DataPreviewProps) => {
             </div>
           </TabPanel>
           
+          <TabPanel value="summary">
+            <DataSummary data={data} />
+          </TabPanel>
+          
           <TabPanel value="visualization">
             <DataVisualization data={data} />
+          </TabPanel>
+          
+          <TabPanel value="timeseries">
+            <TimeSeriesChart data={data} />
+          </TabPanel>
+          
+          <TabPanel value="insights">
+            <div className="space-y-6">
+              <DataInsights data={data} />
+              <TrendingTopics data={data} />
+            </div>
           </TabPanel>
         </TabPanels>
       </TabGroup>
